@@ -43,7 +43,8 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
                         };
 
                         if let Some(matched) = regex.find(&search_line) {
-                            let color_filename = color_string(Colors::CYAN, &path.to_string());
+                            let color_filename =
+                                color_string(Colors::CYAN, &entry.path().display().to_string());
 
                             let idx =
                                 color_string(Colors::YELLOW, &format!("{}", &line_idx.to_string()));
