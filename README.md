@@ -1,7 +1,8 @@
 # sebutils
 
 ## Install
-`cargo install --path .`
+* `cargo install --path .`
+* add to .zshrc: `export PATH="${PATH}:/home/seba/.cargo/bin"`
 
 ## Run without installing
 `cargo run --bin <file> <arguments>`
