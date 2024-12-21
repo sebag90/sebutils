@@ -1,11 +1,13 @@
 [package]
 name = "sebutils"
 version = "0.1.0"
+edition = "2021"
 
 # Default binary
 [dependencies]
 regex = "1"
 clap = { version = "4.1", features = ["derive"] }
+tempfile = "3.6"
 
 [[bin]]
 name = "search"
@@ -14,3 +16,7 @@ path = "src/search.rs"
 [[bin]]
 name = "rcat"
 path = "src/rcat.rs"
+
+[[bin]]
+name = "rename-enum"
+path = "src/rename_enum.rs"

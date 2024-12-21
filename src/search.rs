@@ -1,6 +1,3 @@
-extern crate clap;
-extern crate regex;
-
 use clap::{Arg, Command};
 use regex::Regex;
 use std::fs;

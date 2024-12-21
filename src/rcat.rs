@@ -1,5 +1,3 @@
-extern crate clap;
-
 use clap::{Arg, Command};
 use std::fs;
 use std::io::{self, BufRead};
