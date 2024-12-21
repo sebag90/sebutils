@@ -8,6 +8,7 @@ edition = "2021"
 regex = "1"
 clap = { version = "4.1", features = ["derive"] }
 tempfile = "3.6"
+walkdir = "2"
 
 [[bin]]
 name = "search"

@@ -2,6 +2,7 @@ use clap::{Arg, Command};
 use regex::Regex;
 use std::fs;
 use std::io::{self, BufRead};
+use walkdir::WalkDir;
 
 struct Colors;
 impl Colors {
@@ -23,16 +24,14 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
         Regex::new(pattern).unwrap()
     };
 
-    for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            search(&path.to_string_lossy(), pattern, ignore_case)?;
-        } else {
-            let file = fs::File::open(&path)?;
+    for entry in WalkDir::new(path)
+        .into_iter()
+        .filter_map(|e| e.ok()) // skip files without permissions
+        .filter(|e| e.file_type().is_file())
+    // ignore folders
+    {
+        if let Ok(file) = fs::File::open(entry.path()) {
             let reader = io::BufReader::new(file);
-
             for (line_idx, line) in reader.lines().enumerate() {
                 match line {
                     Ok(valid_line) => {
@@ -44,8 +43,7 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
                         };
 
                         if let Some(matched) = regex.find(&search_line) {
-                            let color_filename =
-                                color_string(Colors::CYAN, &path.to_string_lossy());
+                            let color_filename = color_string(Colors::CYAN, &path.to_string());
 
                             let idx =
                                 color_string(Colors::YELLOW, &format!("{}", &line_idx.to_string()));

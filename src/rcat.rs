@@ -1,26 +1,25 @@
 use clap::{Arg, Command};
 use std::fs;
 use std::io::{self, BufRead};
+use walkdir::WalkDir;
 
 fn search(path: &str) -> io::Result<()> {
-    for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            search(&path.to_string_lossy())?;
-        } else {
-            let file = fs::File::open(&path)?;
+    for entry in WalkDir::new(path)
+        .into_iter()
+        .filter_map(|e| e.ok()) // skip files without permissions
+        .filter(|e| e.file_type().is_file())
+    // ignore folders
+    {
+        if let Ok(file) = fs::File::open(entry.path()) {
             let reader = io::BufReader::new(file);
 
-            for line in reader.lines() {
-                match line {
+            // Read lines from the file and print them.
+            for line_result in reader.lines() {
+                match line_result {
                     Ok(valid_line) => {
                         println!("{}", valid_line);
                     }
-                    Err(_e) => {
-                        break;
-                    }
+                    Err(_e) => break,
                 }
             }
         }
