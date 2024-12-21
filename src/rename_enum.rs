@@ -1,14 +1,15 @@
 use clap::{Arg, Command};
 use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::path::MAIN_SEPARATOR_STR;
 use std::path::{Path, PathBuf};
 use tempfile::tempfile;
 
-fn rename(path: &str) -> std::io::Result<()> {
+fn rename(root_path: &str) -> std::io::Result<()> {
     let mut tmp_files: Vec<(File, PathBuf)> = Vec::new();
 
     // Iterate over the files in the current directory
-    for entry in fs::read_dir(path)? {
+    for entry in fs::read_dir(root_path)? {
         let entry = entry?;
         let path = entry.path();
 
@@ -32,13 +33,15 @@ fn rename(path: &str) -> std::io::Result<()> {
             .extension()
             .map_or("".to_string(), |ext| format!(".{}", ext.to_string_lossy()));
 
-        let new_file_name = format!("test/{}{}", index, suffix);
+        let base_file_name = format!("{}{}{}", root_path, MAIN_SEPARATOR_STR, index);
+
+        let new_file_name = format!("{}{}", base_file_name, suffix);
         let new_path = Path::new(&new_file_name);
         let mut new_file = File::create(&new_path)?;
         let mut buffer = Vec::new();
         tmp_file.read_to_end(&mut buffer)?;
         new_file.write_all(&buffer)?;
-        println!("{:?} -> {:?}", original_path, new_path);
+        println!("{:?} -> {:?}", original_path, new_file_name);
     }
 
     Ok(())
