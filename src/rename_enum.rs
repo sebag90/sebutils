@@ -41,7 +41,7 @@ fn rename(root_path: &str) -> std::io::Result<()> {
         let mut buffer = Vec::new();
         tmp_file.read_to_end(&mut buffer)?;
         new_file.write_all(&buffer)?;
-        println!("{:?} -> {:?}", original_path, new_file_name);
+        println!("{} -> {}", original_path.display(), new_file_name);
     }
 
     Ok(())
