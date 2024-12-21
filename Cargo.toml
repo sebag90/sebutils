@@ -1,0 +1,16 @@
+[package]
+name = "sebutils"
+version = "0.1.0"
+
+# Default binary
+[dependencies]
+regex = "1"
+clap = { version = "4.1", features = ["derive"] }
+
+[[bin]]
+name = "search"
+path = "src/search.rs"
+
+[[bin]]
+name = "rcat"
+path = "src/rcat.rs"
