@@ -10,7 +10,7 @@ fn search(path: &str) -> io::Result<()> {
         let path = entry.path();
 
         if path.is_dir() {
-            search(&path.to_string_lossy())?; // Recursive call, propagating errors
+            search(&path.to_string_lossy())?;
         } else {
             let file = fs::File::open(&path)?;
             let reader = io::BufReader::new(file);
@@ -18,7 +18,7 @@ fn search(path: &str) -> io::Result<()> {
             for line in reader.lines() {
                 match line {
                     Ok(valid_line) => {
-                        println!("{}", valid_line); // Print each line
+                        println!("{}", valid_line);
                     }
                     Err(_e) => {
                         break;
@@ -42,7 +42,6 @@ fn main() {
         )
         .get_matches();
 
-    // Since `default_value` guarantees a value, we can safely unwrap.
     let path = matches.get_one::<String>("path").unwrap();
-    search(path).unwrap(); // The `?` operator works now
+    search(path).unwrap();
 }

@@ -31,7 +31,7 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
         let path = entry.path();
 
         if path.is_dir() {
-            search(&path.to_string_lossy(), pattern, ignore_case)?; // Recursive call, propagating errors
+            search(&path.to_string_lossy(), pattern, ignore_case)?;
         } else {
             let file = fs::File::open(&path)?;
             let reader = io::BufReader::new(file);
