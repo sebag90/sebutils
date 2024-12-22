@@ -1,4 +1,4 @@
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 use regex::Regex;
 use std::fs;
 use std::io::{self, BufRead};
@@ -34,15 +34,14 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
             let reader = io::BufReader::new(file);
             for (line_idx, line) in reader.lines().enumerate() {
                 match line {
-                    Ok(valid_line) => {
-                        let trimmed_line = valid_line.trim();
-                        let search_line = if ignore_case {
-                            trimmed_line.to_lowercase()
-                        } else {
-                            trimmed_line.to_owned()
+                    Ok(mut valid_line) => {
+                        valid_line = valid_line.trim().to_string();
+
+                        if ignore_case {
+                            valid_line = valid_line.to_lowercase()
                         };
 
-                        if let Some(matched) = regex.find(&search_line) {
+                        if let Some(matched) = regex.find(&valid_line) {
                             let color_filename =
                                 color_string(Colors::CYAN, &entry.path().display().to_string());
 
@@ -53,9 +52,9 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
 
                             let result = format!(
                                 "{}{}{}",
-                                &trimmed_line[0..matched.start()],
+                                &valid_line[0..matched.start()],
                                 color_string(Colors::RED, matched.as_str()),
-                                &trimmed_line[matched.end()..]
+                                &valid_line[matched.end()..]
                             );
 
                             println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
@@ -88,6 +87,7 @@ fn main() {
         .arg(
             Arg::new("ignore-case")
                 .short('i')
+                .action(ArgAction::SetTrue)
                 .long("ignore-case")
                 .help("Ignore case sensitivity"),
         )
