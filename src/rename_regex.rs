@@ -26,7 +26,7 @@ fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io
                             if let Some(_matched) = regex.find(path_string) {
                                 let result = regex.replace_all(path_string, replace);
 
-                                let new_name = format!("{}", result);
+                                let new_name = format!("{}", result.trim());
                                 println!("{} -> {}", path.display().to_string(), new_name);
 
                                 if *test != true {
