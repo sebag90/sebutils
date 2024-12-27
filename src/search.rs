@@ -73,16 +73,17 @@ fn main() {
         .version("1.0")
         .about("Searches for patterns in files")
         .arg(
-            Arg::new("path")
-                .help("Root path to start search")
+            Arg::new("pattern")
+                .help("Search pattern")
                 .required(true)
                 .index(1),
         )
         .arg(
-            Arg::new("pattern")
-                .help("Search pattern")
-                .required(true)
-                .index(2),
+            Arg::new("path")
+                .short('p')
+                .long("path")
+                .help("search in a another path")
+                .default_value("."),
         )
         .arg(
             Arg::new("ignore-case")
@@ -95,7 +96,7 @@ fn main() {
 
     let path = matches.get_one::<String>("path").unwrap();
     let pattern = matches.get_one::<String>("pattern").unwrap();
-    let ignore_case = matches.contains_id("ignore-case");
+    let ignore_case = matches.get_one::<bool>("ignore-case").unwrap();
 
-    search(path, pattern, ignore_case).unwrap();
+    search(path, pattern, *ignore_case).unwrap();
 }

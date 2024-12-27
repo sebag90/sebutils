@@ -21,3 +21,7 @@ path = "src/rcat.rs"
 [[bin]]
 name = "rename-enum"
 path = "src/rename_enum.rs"
+
+[[bin]]
+name = "rename-regex"
+path = "src/rename_regex.rs"
