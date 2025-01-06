@@ -35,7 +35,7 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
             for (line_idx, line) in reader.lines().enumerate() {
                 match line {
                     Ok(mut valid_line) => {
-                        valid_line = valid_line.trim().to_string();
+                        // valid_line = valid_line.trim().to_string();
 
                         if ignore_case {
                             valid_line = valid_line.to_lowercase()
@@ -55,7 +55,9 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
                                 &valid_line[0..matched.start()],
                                 color_string(Colors::RED, matched.as_str()),
                                 &valid_line[matched.end()..]
-                            );
+                            )
+                            .trim()
+                            .to_string();
 
                             println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
                         }
