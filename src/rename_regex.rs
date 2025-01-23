@@ -1,18 +1,25 @@
 use clap::{Arg, ArgAction, Command};
 use regex::Regex;
-use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{self};
 use std::path::Path;
-use tempfile::tempfile;
+
+struct Colors;
+impl Colors {
+    // const CYAN: &'static str = "\u{001b}[96m";
+    const GREEN: &'static str = "\u{001b}[92m";
+    const RED: &'static str = "\u{001b}[91m";
+    const END: &'static str = "\u{001b}[0m";
+    const YELLOW: &'static str = "\u{001b}[93m";
+}
+
+fn color_string(color: &str, message: &str) -> String {
+    format!("{}{}{}", color, message, Colors::END)
+}
 
 fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io::Result<()> {
-    let mut tmp_files: Vec<(File, String)> = Vec::new();
+    let mut filename_mapping: Vec<(String, String)> = Vec::new();
 
     match Regex::new(pattern) {
-        Err(_) => {
-            println!("Invalid Regex :(");
-            return Ok(());
-        }
         Ok(regex) => {
             // Iterate over the files in the current directory
             for entry in fs::read_dir(root_path)? {
@@ -27,15 +34,26 @@ fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io
                                 let result = regex.replace_all(path_string, replace);
 
                                 let new_name = format!("{}", result.trim());
-                                println!("{} -> {}", path.display().to_string(), new_name);
+                                println!(
+                                    "{} -> {}",
+                                    color_string(Colors::YELLOW, &path.display().to_string()),
+                                    color_string(Colors::GREEN, &new_name)
+                                );
 
                                 if *test != true {
-                                    let mut temp_file = tempfile()?;
-                                    let content = fs::read(&path)?;
-                                    temp_file.write_all(&content)?;
-                                    temp_file.seek(SeekFrom::Start(0)).unwrap();
-                                    tmp_files.push((temp_file, new_name));
-                                    fs::remove_file(&path)?;
+                                    if Path::new(&new_name).exists() {
+                                        println!(
+                                            "{}",
+                                            color_string(
+                                                Colors::RED,
+                                                &format!("Error: '{}' already exists!", new_name)
+                                            )
+                                        );
+
+                                        return Ok(());
+                                    }
+
+                                    filename_mapping.push((path.display().to_string(), new_name));
                                 }
                             }
                         }
@@ -44,14 +62,14 @@ fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io
             }
 
             // Create new files from the temporary files
-            for (mut tmp_file, new_file_name) in tmp_files.into_iter() {
-                let new_path = Path::new(&new_file_name);
-                let mut new_file = File::create(&new_path)?;
-                let mut buffer = Vec::new();
-                tmp_file.read_to_end(&mut buffer)?;
-                new_file.write_all(&buffer)?;
+            for (old_name, new_file_name) in filename_mapping.into_iter() {
+                fs::rename(old_name, new_file_name)?;
             }
             Ok(())
+        }
+        Err(_) => {
+            println!("Invalid Regex :(");
+            return Ok(());
         }
     }
 }
