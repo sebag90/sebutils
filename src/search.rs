@@ -17,7 +17,7 @@ fn color_string(color: &str, message: &str) -> String {
     format!("{}{}{}", color, message, Colors::END)
 }
 
-fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
+fn search(path: &str, pattern: &str, ignore_case: bool, name_only: bool) -> io::Result<()> {
     let regex = if ignore_case {
         Regex::new(&format!("(?i){}", pattern)).unwrap()
     } else {
@@ -30,39 +30,49 @@ fn search(path: &str, pattern: &str, ignore_case: bool) -> io::Result<()> {
         .filter(|e| e.file_type().is_file())
     // ignore folders
     {
-        if let Ok(file) = fs::File::open(entry.path()) {
-            let reader = io::BufReader::new(file);
-            for (line_idx, line) in reader.lines().enumerate() {
-                match line {
-                    Ok(mut valid_line) => {
-                        // valid_line = valid_line.trim().to_string();
+        if name_only {
+            if let Some(_matched) = regex.find(&entry.path().display().to_string()) {
+                let color_filename =
+                    color_string(Colors::CYAN, &entry.path().display().to_string());
+                println!("{}", color_filename);
+            }
+        } else {
+            if let Ok(file) = fs::File::open(entry.path()) {
+                let reader = io::BufReader::new(file);
+                for (line_idx, line) in reader.lines().enumerate() {
+                    match line {
+                        Ok(mut valid_line) => {
+                            // valid_line = valid_line.trim().to_string();
 
-                        if ignore_case {
-                            valid_line = valid_line.to_lowercase()
-                        };
+                            if ignore_case {
+                                valid_line = valid_line.to_lowercase()
+                            };
 
-                        if let Some(matched) = regex.find(&valid_line) {
-                            let color_filename =
-                                color_string(Colors::CYAN, &entry.path().display().to_string());
+                            if let Some(matched) = regex.find(&valid_line) {
+                                let color_filename =
+                                    color_string(Colors::CYAN, &entry.path().display().to_string());
 
-                            let idx =
-                                color_string(Colors::YELLOW, &format!("{}", &line_idx.to_string()));
-                            let row_idx =
-                                color_string(Colors::GREEN, &format!("{}", matched.start()));
+                                let idx = color_string(
+                                    Colors::YELLOW,
+                                    &format!("{}", &line_idx.to_string()),
+                                );
+                                let row_idx =
+                                    color_string(Colors::GREEN, &format!("{}", matched.start()));
 
-                            let result = format!(
-                                "{}{}{}",
-                                &valid_line[0..matched.start()],
-                                color_string(Colors::RED, matched.as_str()),
-                                &valid_line[matched.end()..]
-                            )
-                            .trim()
-                            .to_string();
+                                let result = format!(
+                                    "{}{}{}",
+                                    &valid_line[0..matched.start()],
+                                    color_string(Colors::RED, matched.as_str()),
+                                    &valid_line[matched.end()..]
+                                )
+                                .trim()
+                                .to_string();
 
-                            println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
+                                println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
+                            }
                         }
+                        Err(_e) => break,
                     }
-                    Err(_e) => break,
                 }
             }
         }
@@ -94,11 +104,19 @@ fn main() {
                 .long("ignore-case")
                 .help("Ignore case sensitivity"),
         )
+        .arg(
+            Arg::new("name-only")
+                .short('n')
+                .action(ArgAction::SetTrue)
+                .long("name-only")
+                .help("Match the name of the files and directories"),
+        )
         .get_matches();
 
     let path = matches.get_one::<String>("path").unwrap();
     let pattern = matches.get_one::<String>("pattern").unwrap();
     let ignore_case = matches.get_one::<bool>("ignore-case").unwrap();
+    let name_only = matches.get_one::<bool>("name-only").unwrap();
 
-    search(path, pattern, *ignore_case).unwrap();
+    search(path, pattern, *ignore_case, *name_only).unwrap();
 }
