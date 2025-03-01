@@ -17,23 +17,39 @@ fn color_string(color: &str, message: &str) -> String {
     format!("{}{}{}", color, message, Colors::END)
 }
 
-fn search(path: &str, pattern: &str, ignore_case: bool, name_only: bool) -> io::Result<()> {
+fn search(
+    path: &str,
+    pattern: &str,
+    ignore_case: bool,
+    name_only: bool,
+    dirs_only: bool,
+) -> io::Result<()> {
     let regex = if ignore_case {
         Regex::new(&format!("(?i){}", pattern)).unwrap()
     } else {
         Regex::new(pattern).unwrap()
     };
 
-    for entry in WalkDir::new(path)
-        .into_iter()
-        .filter_map(|e| e.ok()) // skip files without permissions
-        .filter(|e| e.file_type().is_file())
-    // ignore folders
+    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok())
+    // skip files without permissions
     {
         if name_only {
+            if dirs_only {
+                // ignore everything that isn't a directory
+                if !entry.file_type().is_dir() {
+                    continue;
+                }
+            } else {
+                // ignore directories
+                if entry.file_type().is_dir() {
+                    continue;
+                }
+            }
+
             if let Some(_matched) = regex.find(&entry.path().display().to_string()) {
                 let color_filename =
                     color_string(Colors::CYAN, &entry.path().display().to_string());
+
                 println!("{}", color_filename);
             }
         } else {
@@ -86,7 +102,7 @@ fn main() {
         .about("Searches for patterns in files")
         .arg(
             Arg::new("pattern")
-                .help("Search pattern")
+                .help("search pattern")
                 .required(true)
                 .index(1),
         )
@@ -94,7 +110,7 @@ fn main() {
             Arg::new("path")
                 .short('p')
                 .long("path")
-                .help("search in a another path")
+                .help("root path to start recursive search")
                 .default_value("."),
         )
         .arg(
@@ -102,14 +118,21 @@ fn main() {
                 .short('i')
                 .action(ArgAction::SetTrue)
                 .long("ignore-case")
-                .help("Ignore case sensitivity"),
+                .help("ignore case distinctions in patterns and data"),
         )
         .arg(
             Arg::new("name-only")
                 .short('n')
                 .action(ArgAction::SetTrue)
                 .long("name-only")
-                .help("Match the name of the files and directories"),
+                .help("match the name only and not the content"),
+        )
+        .arg(
+            Arg::new("dirs-only")
+                .short('d')
+                .action(ArgAction::SetTrue)
+                .long("dirs-only")
+                .help("match the name of directories only"),
         )
         .get_matches();
 
@@ -117,6 +140,7 @@ fn main() {
     let pattern = matches.get_one::<String>("pattern").unwrap();
     let ignore_case = matches.get_one::<bool>("ignore-case").unwrap();
     let name_only = matches.get_one::<bool>("name-only").unwrap();
+    let dirs_only = matches.get_one::<bool>("dirs-only").unwrap();
 
-    search(path, pattern, *ignore_case, *name_only).unwrap();
+    search(path, pattern, *ignore_case, *name_only, *dirs_only).unwrap();
 }
