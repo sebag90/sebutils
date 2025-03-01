@@ -6,7 +6,7 @@ use walkdir::WalkDir;
 
 struct Colors;
 impl Colors {
-    const CYAN: &'static str = "\u{001b}[96m";
+    const PURPLE: &'static str = "\u{001b}[95m";
     const GREEN: &'static str = "\u{001b}[92m";
     const RED: &'static str = "\u{001b}[91m";
     const END: &'static str = "\u{001b}[0m";
@@ -48,7 +48,7 @@ fn search(
 
             if let Some(_matched) = regex.find(&entry.path().display().to_string()) {
                 let color_filename =
-                    color_string(Colors::CYAN, &entry.path().display().to_string());
+                    color_string(Colors::PURPLE, &entry.path().display().to_string());
 
                 println!("{}", color_filename);
             }
@@ -65,8 +65,10 @@ fn search(
                             };
 
                             if let Some(matched) = regex.find(&valid_line) {
-                                let color_filename =
-                                    color_string(Colors::CYAN, &entry.path().display().to_string());
+                                let color_filename = color_string(
+                                    Colors::PURPLE,
+                                    &entry.path().display().to_string(),
+                                );
 
                                 let idx = color_string(
                                     Colors::YELLOW,
@@ -132,7 +134,8 @@ fn main() {
                 .short('d')
                 .action(ArgAction::SetTrue)
                 .long("dirs-only")
-                .help("match the name of directories only"),
+                .help("match the name of directories only")
+                .requires("name-only"),
         )
         .get_matches();
 
