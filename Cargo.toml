@@ -1,6 +1,6 @@
 [package]
 name = "sebutils"
-version = "0.1.4"
+version = "0.2.4"
 edition = "2021"
 
 # Default binary
@@ -25,3 +25,7 @@ path = "src/rename_enum.rs"
 [[bin]]
 name = "rename-regex"
 path = "src/rename_regex.rs"
+
+[[bin]]
+name = "dstroy"
+path = "src/dstroy.rs"
