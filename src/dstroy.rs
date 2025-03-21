@@ -27,9 +27,9 @@ fn rm_ds_files(path: &str) -> io::Result<()> {
 }
 
 fn main() {
-    let matches = Command::new("Searcher")
+    let matches = Command::new("DStroy")
         .version("1.0")
-        .about("Searches for patterns in files")
+        .about("Removes .DS_Store files from mac")
         .arg(
             Arg::new("path")
                 .short('p')

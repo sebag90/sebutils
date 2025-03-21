@@ -75,9 +75,9 @@ fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io
 }
 
 fn main() {
-    let matches = Command::new("rename-enum")
+    let matches = Command::new("rename-regex")
         .version("1.0")
-        .about("rename all files by enumerating")
+        .about("Rename all files with regex")
         .arg(
             Arg::new("pattern")
                 .help("Search pattern")

@@ -50,7 +50,7 @@ fn rename(root_path: &str) -> std::io::Result<()> {
 fn main() {
     let matches = Command::new("rename-enum")
         .version("1.0")
-        .about("rename all files by enumerating")
+        .about("Rename all files by enumerating")
         .arg(
             Arg::new("path")
                 .help("Root path to process files")
