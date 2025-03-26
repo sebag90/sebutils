@@ -13,7 +13,7 @@ fn color_string(color: &str, message: &str) -> String {
     format!("{}{}{}", color, message, Colors::END)
 }
 
-fn rm_ds_files(path: &str) -> io::Result<()> {
+fn rm_venv_dirs(path: &str) -> io::Result<()> {
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         if entry.file_name() == ".venv" {
             let color_filename = color_string(Colors::PURPLE, &entry.path().display().to_string());
@@ -39,5 +39,5 @@ fn main() {
 
     let path = matches.get_one::<String>("path").unwrap();
 
-    rm_ds_files(path).unwrap();
+    rm_venv_dirs(path).unwrap();
 }
