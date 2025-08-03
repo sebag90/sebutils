@@ -1,4 +1,5 @@
 use clap::{Arg, ArgAction, Command};
+use rayon::prelude::*;
 use regex::Regex;
 use std::fs;
 use std::io::{self, BufRead};
@@ -68,19 +69,22 @@ fn search(
         Regex::new(pattern).unwrap()
     };
 
-    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok())
+    let entries: Vec<_> = WalkDir::new(path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .collect();
     // skip files without permissions
-    {
+    entries.par_iter().for_each(|entry| {
         if name_only {
             if dirs_only {
                 // ignore everything that isn't a directory
                 if !entry.file_type().is_dir() {
-                    continue;
+                    return;
                 }
             } else {
                 // ignore directories
                 if entry.file_type().is_dir() {
-                    continue;
+                    return;
                 }
             }
 
@@ -104,10 +108,10 @@ fn search(
             };
 
             if to_check {
-                search_in_file(regex.clone(), entry, ignore_case)
+                search_in_file(regex.clone(), entry.clone(), ignore_case)
             }
         }
-    }
+    });
     Ok(())
 }
 

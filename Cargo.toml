@@ -1,6 +1,6 @@
 [package]
 name = "sebutils"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 
 # Default binary
@@ -11,6 +11,7 @@ tempfile = "3.6"
 walkdir = "2"
 fs_extra = "1.2.0"
 human_bytes = "0.4"
+rayon = "1.10"
 
 [[bin]]
 name = "search"
