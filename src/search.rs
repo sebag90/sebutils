@@ -2,6 +2,7 @@ use clap::{Arg, ArgAction, Command};
 use regex::Regex;
 use std::fs;
 use std::io::{self, BufRead};
+use walkdir::DirEntry;
 use walkdir::WalkDir;
 
 struct Colors;
@@ -17,9 +18,46 @@ fn color_string(color: &str, message: &str) -> String {
     format!("{}{}{}", color, message, Colors::END)
 }
 
+fn search_in_file(regex: Regex, filename: DirEntry, ignore_case: bool) {
+    if let Ok(file) = fs::File::open(filename.path()) {
+        let reader = io::BufReader::new(file);
+        for (line_idx, line) in reader.lines().enumerate() {
+            match line {
+                Ok(mut valid_line) => {
+                    if ignore_case {
+                        valid_line = valid_line.to_lowercase()
+                    };
+
+                    if let Some(matched) = regex.find(&valid_line) {
+                        let color_filename =
+                            color_string(Colors::PURPLE, &filename.path().display().to_string());
+
+                        let idx =
+                            color_string(Colors::YELLOW, &format!("{}", &line_idx.to_string()));
+                        let row_idx = color_string(Colors::GREEN, &format!("{}", matched.start()));
+
+                        let result = format!(
+                            "{}{}{}",
+                            &valid_line[0..matched.start()],
+                            color_string(Colors::RED, matched.as_str()),
+                            &valid_line[matched.end()..]
+                        )
+                        .trim()
+                        .to_string();
+
+                        println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
+                    }
+                }
+                Err(_e) => break,
+            }
+        }
+    }
+}
+
 fn search(
     path: &str,
     pattern: &str,
+    file_name: Option<&String>,
     ignore_case: bool,
     name_only: bool,
     dirs_only: bool,
@@ -52,46 +90,21 @@ fn search(
 
                 println!("{}", color_filename);
             }
+
+        // we search the entire file, not just the name
         } else {
-            if let Ok(file) = fs::File::open(entry.path()) {
-                let reader = io::BufReader::new(file);
-                for (line_idx, line) in reader.lines().enumerate() {
-                    match line {
-                        Ok(mut valid_line) => {
-                            // valid_line = valid_line.trim().to_string();
-
-                            if ignore_case {
-                                valid_line = valid_line.to_lowercase()
-                            };
-
-                            if let Some(matched) = regex.find(&valid_line) {
-                                let color_filename = color_string(
-                                    Colors::PURPLE,
-                                    &entry.path().display().to_string(),
-                                );
-
-                                let idx = color_string(
-                                    Colors::YELLOW,
-                                    &format!("{}", &line_idx.to_string()),
-                                );
-                                let row_idx =
-                                    color_string(Colors::GREEN, &format!("{}", matched.start()));
-
-                                let result = format!(
-                                    "{}{}{}",
-                                    &valid_line[0..matched.start()],
-                                    color_string(Colors::RED, matched.as_str()),
-                                    &valid_line[matched.end()..]
-                                )
-                                .trim()
-                                .to_string();
-
-                                println!("{}:{}:{}\t{}", color_filename, idx, row_idx, result);
-                            }
-                        }
-                        Err(_e) => break,
-                    }
+            let to_check = match file_name {
+                Some(name) => {
+                    let name_regex = Regex::new(name).unwrap();
+                    name_regex
+                        .find(&entry.path().display().to_string())
+                        .is_some()
                 }
+                None => true,
+            };
+
+            if to_check {
+                search_in_file(regex.clone(), entry, ignore_case)
             }
         }
     }
@@ -114,6 +127,12 @@ fn main() {
                 .long("path")
                 .help("root path to start recursive search")
                 .default_value("."),
+        )
+        .arg(
+            Arg::new("file-name")
+                .short('f')
+                .long("file-name")
+                .help("only search files that match the file name regex"),
         )
         .arg(
             Arg::new("ignore-case")
@@ -141,9 +160,18 @@ fn main() {
 
     let path = matches.get_one::<String>("path").unwrap();
     let pattern = matches.get_one::<String>("pattern").unwrap();
+    let file_name = matches.get_one::<String>("file-name");
     let ignore_case = matches.get_one::<bool>("ignore-case").unwrap();
     let name_only = matches.get_one::<bool>("name-only").unwrap();
     let dirs_only = matches.get_one::<bool>("dirs-only").unwrap();
 
-    search(path, pattern, *ignore_case, *name_only, *dirs_only).unwrap();
+    search(
+        path,
+        pattern,
+        file_name,
+        *ignore_case,
+        *name_only,
+        *dirs_only,
+    )
+    .unwrap();
 }
