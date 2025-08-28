@@ -169,6 +169,33 @@ fn main() {
     let name_only = matches.get_one::<bool>("name-only").unwrap();
     let dirs_only = matches.get_one::<bool>("dirs-only").unwrap();
 
+    // Validate main regex pattern early
+    let _main_regex = if *ignore_case {
+        Regex::new(&format!("(?i){}", pattern))
+    } else {
+        Regex::new(pattern)
+    };
+
+    let _main_regex = match _main_regex {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("Invalid regex pattern: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    // Validate file-name regex if present
+    let _file_name_regex = match file_name {
+        Some(name) => match Regex::new(name) {
+            Ok(r) => Some(r),
+            Err(e) => {
+                eprintln!("Invalid file-name regex: {}", e);
+                std::process::exit(1);
+            }
+        },
+        None => None,
+    };
+
     search(
         path,
         pattern,
