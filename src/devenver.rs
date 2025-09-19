@@ -1,6 +1,7 @@
 use clap::{Arg, Command};
 use fs_extra::dir::get_size;
 use human_bytes::human_bytes;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon::prelude::*;
 use std::fs;
 use std::io;
@@ -19,45 +20,54 @@ fn color_string(color: &str, message: &str) -> String {
 }
 
 fn rm_venv_dirs_rayon(path: &str, dry_run: bool) -> io::Result<()> {
-    // 1. Collect all `.venv` directories first (walk is serial)
+    use walkdir::DirEntry;
+
+    fn is_venv(entry: &DirEntry) -> bool {
+        entry.file_type().is_dir() && entry.file_name().to_str() == Some(".venv")
+    }
+
+    // Parallelize WalkDir using par_bridge()
     let venv_paths: Vec<PathBuf> = WalkDir::new(path)
         .into_iter()
         .par_bridge()
-        .filter_map(|e| e.ok())
-        .filter(|entry| entry.file_name().to_str() == Some(".venv"))
+        .filter_map(Result::ok)
+        .filter(is_venv)
         .map(|entry| entry.into_path())
         .collect();
 
-    // 2. Process in parallel using rayon
+    // Process each `.venv` path in parallel
     let results: Vec<(PathBuf, u64, Option<io::Error>)> = venv_paths
-        .par_iter()
+        .into_par_iter()
         .map(|venv_path| {
-            let size = get_size(venv_path).unwrap_or(0);
+            let size = get_size(&venv_path).unwrap_or(0);
             let err = if dry_run {
-                None // no deletion attempted
+                None
             } else {
-                fs::remove_dir_all(venv_path).err()
+                fs::remove_dir_all(&venv_path).err()
             };
-            (venv_path.clone(), size, err)
+
+            (venv_path, size, err)
         })
         .collect();
 
-    // 3. Display results and accumulate total space saved
+    // Output results
     let mut total_used_space = 0;
-    for (path, size, err) in results {
+    for (path, size, err) in &results {
         let color_filename = color_string(Colors::PURPLE, &path.display().to_string());
         if let Some(e) = err {
-            eprintln!("Failed to delete {}: {}", color_filename, e);
+            eprintln!("❌ Failed to delete {}: {}", color_filename, e);
         } else {
             println!("{}", color_filename);
             total_used_space += size;
         }
-
-        total_used_space += size;
     }
 
-    let color_used_space = color_string(Colors::GREEN, &human_bytes(total_used_space as f64));
-    println!("\nTotal reclaimed space: {}", color_used_space);
+    if !dry_run {
+        let color_used_space = color_string(Colors::GREEN, &human_bytes(total_used_space as f64));
+        println!("\nTotal reclaimed space: {}", color_used_space);
+    } else {
+        println!("\n(dry-run) No directories were actually deleted.");
+    }
 
     Ok(())
 }
