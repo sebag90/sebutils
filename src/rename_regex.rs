@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, Command};
+use clap::{Arg, Command};
 use regex::Regex;
 use std::fs::{self};
 use std::path::Path;
@@ -16,7 +16,7 @@ fn color_string(color: &str, message: &str) -> String {
     format!("{}{}{}", color, message, Colors::END)
 }
 
-fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io::Result<()> {
+fn rename(pattern: &str, replace: &str, root_path: &str, dry_run: bool) -> std::io::Result<()> {
     let mut filename_mapping: Vec<(String, String)> = Vec::new();
 
     match Regex::new(pattern) {
@@ -40,7 +40,7 @@ fn rename(pattern: &str, replace: &str, root_path: &str, test: &bool) -> std::io
                                     color_string(Colors::GREEN, &new_name)
                                 );
 
-                                if *test != true {
+                                if dry_run != true {
                                     if Path::new(&new_name).exists() {
                                         println!(
                                             "{}",
@@ -98,18 +98,17 @@ fn main() {
                 .default_value("."),
         )
         .arg(
-            Arg::new("test")
-                .short('t')
-                .long("test")
-                .help("do not apply changes")
-                .action(ArgAction::SetTrue),
+            Arg::new("dry-run")
+                .long("dry-run")
+                .help("SDo not apply changes")
+                .action(clap::ArgAction::SetTrue),
         )
         .get_matches();
 
     let pattern = matches.get_one::<String>("pattern").unwrap();
     let substitution = matches.get_one::<String>("substitution").unwrap();
     let path = matches.get_one::<String>("path").unwrap();
-    let test = matches.get_one::<bool>("test").unwrap();
+    let dry_run = matches.get_flag("dry-run");
 
-    rename(pattern, substitution, path, test).unwrap();
+    rename(pattern, substitution, path, dry_run).unwrap();
 }
